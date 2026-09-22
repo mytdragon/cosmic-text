@@ -42,9 +42,12 @@ version = "0.3.18"
 default-features = false
 features = ["hardcoded-data"]
 
+[target.'cfg(target_os = "linux")'.dependencies]
+fontconfig = { version = "0.11", optional = true, features = ["dlopen"] }
+
 [features]
 default = ["std", "swash", "fontconfig"]
-fontconfig = ["fontdb/fontconfig", "std"]
+fontconfig = ["fontdb/fontconfig", "std", "dep:fontconfig"]
 monospace_fallback = []
 no_std = ["hashbrown", "dep:libm", "skrifa/libm", "core_maths", "swash?/libm"]
 peniko = []

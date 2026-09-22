@@ -318,11 +318,47 @@ impl FontSystem {
         log::debug!("Locale: {locale}");
 
         //TODO: configurable default fonts
-        db.set_monospace_family("Noto Sans Mono");
-        db.set_sans_serif_family("Open Sans");
-        db.set_serif_family("DejaVu Serif");
+        #[allow(unused_mut)]
+        let mut monospace_family = String::from("Noto Sans Mono");
+        #[allow(unused_mut)]
+        let mut sans_serif_family = String::from("Open Sans");
+        #[allow(unused_mut)]
+        let mut serif_family = String::from("DejaVu Serif");
+
+        #[cfg(all(target_os = "linux", feature = "fontconfig"))]
+        Self::apply_fontconfig_defaults(
+            &mut monospace_family,
+            &mut sans_serif_family,
+            &mut serif_family,
+        );
+
+        db.set_monospace_family(monospace_family);
+        db.set_sans_serif_family(sans_serif_family);
+        db.set_serif_family(serif_family);
 
         Self::new_with_locale_and_db_and_fallback(locale, db, PlatformFallback)
+    }
+
+    /// Uses fontconfig if available to override the default fonts.
+    #[cfg(all(target_os = "linux", feature = "fontconfig"))]
+    fn apply_fontconfig_defaults(
+        monospace_family: &mut String,
+        sans_serif_family: &mut String,
+        serif_family: &mut String,
+    ) {
+        let Some(fc) = fontconfig::Fontconfig::new() else {
+            return;
+        };
+
+        if let Ok(font) = fc.find("monospace", None) {
+            *monospace_family = font.name;
+        }
+        if let Ok(font) = fc.find("sans-serif", None) {
+            *sans_serif_family = font.name;
+        }
+        if let Ok(font) = fc.find("serif", None) {
+            *serif_family = font.name;
+        }
     }
 
     /// Create a new [`FontSystem`] with a pre-specified locale, font database and font fallback list.
